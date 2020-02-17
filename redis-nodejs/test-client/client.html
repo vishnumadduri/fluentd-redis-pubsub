@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script>
+            $(document).ready(function() {
+            
+              $($("input[id=formButton]")).click(function(){
+                var userId = $('#idForm').find('input[name="userId"]').val();
+                $('#idForm').hide(500);
+
+                // push notifications stuff------------------------------------
+                //connect to the socket
+                var socket = io.connect('http://127.0.0.1:8001/notifications');
+                $("#messages").append('<li>Connecting...</li>');
+                
+
+                jQuery('<div/>', {
+                 id: 'some-id',
+                 style:"background:#98bf21;height:100px;width:100px;position:absolute;",
+                  title: 'now this div has a title!'
+                  }).appendTo('#mySelector');
+                //Redis notification receiver
+                socket.on('notification', function (channel, notification) {
+                  var payload = JSON.parse(notification);
+
+                  console.log(channel + ': ' + payload.y);
+                  // $("#messages").append('<li>'+channel + ': ' + notification+'</li>');
+                  $("#some-id").offset({top: payload.y, left: payload.x});
+
+                });
+
+                //Connection confirmation
+                socket.on('connected', function () {
+                  var msg = "You are now connected for push notifications";
+                  console.log(msg);
+                  $("#messages").append('<li>'+msg+'</li>');
+                  // Send the user ID
+                  socket.emit('join', userId);
+                });
+                // End push notifications stuff---------------------------------
+               return false;
+              });
+        });
+        </script>
+    </head>
+    <body>
+        <form id="idForm" action="">
+          User ID: <input type="text" name="userId"><br>
+          <input id="formButton" type="submit" value="Submit">
+        </form> 
+        <h2>Messages from server:</h2>
+        <ul id="messages">
+        </ul>
+        <div id="mySelector">
+
+        </div>
+    </body>
+<html>

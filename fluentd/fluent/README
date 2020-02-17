@@ -1,0 +1,40 @@
+fluent-gem install fluent-plugin-redis-store
+
+add 
+
+<match redis.**>
+  @type redis_store
+
+  host localhost
+  port 6379
+
+  # database number is optional.
+  #db_number 0        # 0 is default
+  # If requirepass is set, please specify this.
+  # password hogefuga
+  # Users can set '${tag}' or ${tag[0]}.${tag[1]} or ...?
+  # insert_key_prefix '${tag}'
+  # Users can set strftime format.
+  # "%s" will be replaced into unixtime.
+  # "%Y%m%d.%H%M%S" will be replaced like as 20161202.112335.
+  # strftime_format "%s"
+  # Allow insert key duplicate. It will work as update values.
+  # allow_duplicate_key true
+  # ttl 300 # If 0 or negative value is set, ttl is not set in each key.
+  store_type publish
+  key push:notifications:vishnu
+  flush_interval 0
+</match>
+
+to fluent.conf
+
+testing 
+
+echo '{"did":"1234567","x":0,"y":200,"z":2}' | fluent-cat redis.vishnu1
+
+should be displayed in redis-cli monitor command
+
+
+
+
+
