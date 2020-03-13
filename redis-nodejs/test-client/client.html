@@ -1,5 +1,20 @@
 <html>
     <head>
+      <style>
+        .flex-container {
+          display: flex;
+          flex-direction: column;
+          background-color: DodgerBlue;
+        }
+        
+        .flex-container > div {
+          background-color: #f1f1f1;
+          margin: 10px;
+          text-align: center;
+          line-height: 16px;
+          font-size: 12px;
+        }
+        </style>
         <script src="/socket.io/socket.io.js"></script>
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script>
@@ -11,45 +26,66 @@
 
                 // push notifications stuff------------------------------------
                 //connect to the socket
-                var socket = io.connect('http://127.0.0.1:8001/notifications');
+                var hostname=window.location.hostname;
+                console.log('hostname'+hostname);
+                var socket = io.connect('http://'+hostname+':8001/notifications');
                 $("#messages").append('<li>Connecting...</li>');
                 
                 var dict = new Map();
 
 
-             
+               var counter=0;
                 //Redis notification receiver
                 socket.on('notification', function (channel, notification) {
                   var payload = JSON.parse(notification);
 
-                  // console.log(channel + ': ' + JSON.stringify(payload));
+               
 
                   if(dict.has(payload.did)){
                     var previousreading=dict.get(payload.did);
 
-                    var y1=parseFloat(previousreading.accel.y);
+                    var y1=parseFloat(previousreading.y);
                     var y2=parseFloat(payload.accel.y);
 
-                    var x1=parseFloat(previousreading.accel.x);
+                    var x1=parseFloat(previousreading.x);
                     var x2=parseFloat(payload.accel.x);
 
-                    console.log('e:'+JSON.stringify(payload) + 'p '+JSON.stringify(previousreading))
-                    // console.log(channel + ': existing' + payload.did + 'top :' + (previousreading.accel.y+payload.accel.y) + '  left : '+(x1+x2));
-                    $("#"+payload.did).offset({top: previousreading.accel.y+payload.accel.y, left: previousreading.accel.x+payload.accel.x});
-                    dict.set(payload.did,payload);
+                    // console.log('e:'+JSON.stringify(payload) + 'p '+JSON.stringify(previousreading))
+                    var rssi=payload.rssi;
+                    var elements = [];
+                    var title = $('<div>Name:'+payload.did+'</div>');
+                    elements.push(title);
+                    if(rssi && rssi.length){   
+                      for (index = 0; index < rssi.length; index++) { 
+                        var rssi_payload=rssi[index];
+                        console.log("did "+rssi_payload.did +" Signal :"+rssi_payload.signal); 
+                        var element = $('<div> did :'+rssi_payload.did +'  Signal:'+rssi_payload.signal+'</div>');
+                        elements.push(element);
+                      } 
+                    } 
+                    var newY = y1+(y2*10);
+                    var newX =x1+(x2*10); 
 
+                    // console.log("NewX: "+newX +"New Y :"+newY);
+                    // $("#"+payload.did).offset({top: newY, left:newX});
+                    $("#"+payload.did).html(elements);
+                    dict.set(payload.did,{"x":newX,"y":newY});
+
+                  // if(x2 >=3.0 || x2 <= -3.0)
+                    console.log(channel + ': ' + JSON.stringify(payload));
 
                   }else{
-                    dict.set(payload.did,payload);
-                    console.log(channel + ': added ' + payload.did);
+                    dict.set(payload.did,{"x":payload.accel.x,"y":payload.accel.y});
+                    // console.log(channel + ': added ' + payload.did);
                     jQuery('<div/>', {
                      text: payload.did,
                      id: ''+payload.did,
-                     style:"  border: 2px solid #73AD21;height:100px;width:100px;position:absolute;",
-                     title: 'now this div has a title!'
+                     style:"  border: 2px solid #73AD21;position:absolute;",
+                     title: 'now this div has a title!',
+                     class:'flex-container'
                   }).appendTo('#mySelector');
-
-
+                  $("#"+payload.did).offset({top: 200, left: (150*counter)});
+                  counter++;
                   }
 
                 });
